@@ -1,0 +1,24 @@
+{
+  "name": "contracts",
+  "version": "0.0.1",
+  "description": "Ethereum smart contracts for the Polyledger protocol",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "testrpc": "testrpc -a 15",
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/polyledger/contracts.git"
+  },
+  "author": "Matthew Rosendin <matthew@polyledger.com>",
+  "license": "UNLICENSED",
+  "private": true,
+  "bugs": {
+    "url": "https://github.com/polyledger/contracts/issues"
+  },
+  "homepage": "https://github.com/polyledger/contracts#readme"
+}
