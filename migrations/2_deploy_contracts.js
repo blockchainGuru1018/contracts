@@ -1,8 +1,8 @@
 const SafeMath = artifacts.require("./SafeMath.sol")
-const Placeholder = artifacts.require("./Placeholder.sol")
+const Custodian = artifacts.require("./Custodian.sol")
 
 module.exports = (deployer) => {
   deployer.deploy(SafeMath)
-  deployer.link(SafeMath, Placeholder)
-  deployer.deploy(Placeholder)
+  deployer.link(SafeMath, Custodian)
+  deployer.deploy(Custodian)
 }
