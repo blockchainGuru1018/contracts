@@ -1,101 +1,129 @@
 pragma solidity 0.4.18;
 
 import './SafeMath.sol';
+import './CoinRegistry.sol';
 
-
-/**
+ /*****************************************************************************
  * @title Custodian - Custodian contract
  * @author Matthew Rosendin <matthew@polyledger.com>
- * @dev TODO
- */
+ * @dev A custodian contract that handles financial operations.
+ * @dev Entitlements are calculated off-chain.
+ *****************************************************************************/
 contract Custodian {
   using SafeMath for uint;
 
-  /*
+  /****************************************************************************
    * EVENTS
-   */
+   ***************************************************************************/
 
-  event deposited();
-  event withdrawed();
-  event traded();
+  event Deposit(uint256 amount);
+  event Withdraw(uint256 amount, address recipient);
+  event AssetPurchased(bytes32 symbol, uint256 amount);
+  event AssetSold(bytes32 symbol, uint256 amount);
 
-  /*
+  /****************************************************************************
    * CONSTANTS
-   */
+   ***************************************************************************/
 
-  address owner;
+  address owner;    // Polyledger ETH account
+  address investor; // Client ETH account
+  CoinRegistry registry;
 
-  /*
+  /****************************************************************************
    * DATA STRUCTURES
-   */
+   ***************************************************************************/
 
-  struct Exchange {
-    bytes32 name; // The name of the exchange
+  struct Position {
+    uint256 amount;
   }
 
-  struct Wallet {
-    bytes32 identifier; // The account address; represents maximum 256 characters
-    bytes32 symbol; // The symbol of the coin represented by this wallet
-    Exchange exchange; // The exchange that holds custody of the account
-    uint balance; // Not good if Oracle has to constantly update this value
-  }
-
-  struct Investor {
-    bool active; // Whether the investor is active on Polyledger
-    string name; // The investors full name
-    bytes32[] wallets; // List of wallet UUIDs
-  }
-
-  /*
+  /****************************************************************************
    * STATE VARIABLES
-   */
+   ***************************************************************************/
 
-  // Keyword 'private' means only visible in the current contract
-  mapping(address => Investor) private investors;
+  // Mapping of a symbol to position
+  mapping(bytes32 => Position) positions;
 
-  /*
+  /****************************************************************************
    * MODIFIERS
-   */
+   ***************************************************************************/
 
   modifier onlyOwner {
     require(msg.sender == owner);
     _;
   }
 
-  /*
-   * METHODS
-   */
+  modifier onlyInvestor {
+    require(msg.sender == investor);
+    _;
+  }
 
-  /// @dev Instantiates contract that performs basic functions of a custodian
-  function Custodian () public {
+  modifier onlyInvestorOrOwner {
+    require(msg.sender == investor || msg.sender == owner);
+    _;
+  }
+
+  modifier isRegisteredCoin (bytes32 symbol) {
+    require(registry.isRegistered(symbol));
+    _;
+  }
+
+  /****************************************************************************
+   * METHODS
+   ***************************************************************************/
+
+  /**
+   * @dev Instantiates contract that performs basic functions of a custodian
+   * @param _investor The investor
+   */
+  function Custodian (address _investor, address _registry) public {
     owner = msg.sender;
+    investor = _investor;
+    registry = CoinRegistry(_registry);
   }
 
   /**
-   * @dev Deposits funds to a wallet
-   * @param identifier The UUID of the wallet
-   * @param amount The amount to deposit
+   * @dev Deposits funds
    */
-  function deposit (bytes32 identifier, uint amount) public onlyOwner {}
+  function deposit () public payable onlyInvestor {
+    Deposit(msg.value); // Polyledger platform will subscribe to this event
+  }
 
   /**
-   * @dev Withdraws funds from a wallet
-   * @param identifier The UUID of the wallet
+   * @dev Withdraws funds
    * @param amount The amount to withdraw
    */
-  function withdraw (bytes32 identifier, uint amount) public onlyOwner {}
+  function withdraw (uint256 amount) public onlyInvestorOrOwner {
+    if (this.balance < amount) revert();
+    msg.sender.transfer(amount);
+    Withdraw(amount, msg.sender);
+  }
 
   /**
-   * @dev Trades an asset for another asset
-   * @param baseIdentifier The UUID of the wallet of the asset being sold
-   * @param amount The amount to trade
-   * @param quoteIdentifier The UUID of the wallet of the asset being bought
+   * @dev Records a purchase of a digital asset
+   * @param symbol The symbol of the asset
+   * @param amount The amount bought
    */
-  function trade (
-    bytes32 baseIdentifier,
-    uint amount,
-    bytes32 quoteIdentifier
-  ) public onlyOwner {}
+  function buy (
+    bytes32 symbol,
+    uint256 amount
+  ) public onlyOwner isRegisteredCoin(symbol) {
+    positions[symbol].amount += amount;
+    AssetPurchased(symbol, amount);
+  }
+
+  /**
+   * @dev Records a sale of a digital asset
+   * @param symbol The symbol of the asset
+   * @param amount The amount sold
+   */
+  function sell (
+    bytes32 symbol,
+    uint256 amount
+  ) public onlyOwner isRegisteredCoin(symbol) {
+    positions[symbol].amount -= amount;
+    AssetSold(symbol, amount);
+  }
 
   /// @dev Fallback function
   function () public {
