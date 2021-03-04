@@ -10,15 +10,5 @@
     "testrpc": "testrpc -a 15",
     "test": "truffle test"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/polyledger/contracts.git"
-  },
-  "author": "Matthew Rosendin <matthew@polyledger.com>",
-  "license": "UNLICENSED",
-  "private": true,
-  "bugs": {
-    "url": "https://github.com/polyledger/contracts/issues"
-  },
-  "homepage": "https://github.com/polyledger/contracts#readme"
+  "private": true
 }
